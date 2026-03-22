@@ -7,6 +7,7 @@ from config import BOT_TOKEN, DELETE_TIME, WARN_DELETE, BOT_USERNAME
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 
+
 # 📂 reply loader
 def get_reply(file):
     try:
@@ -14,6 +15,15 @@ def get_reply(file):
             return random.choice(f.readlines()).strip()
     except:
         return None
+
+
+# 🔍 ADMIN CHECK
+def is_admin(chat_id, user_id):
+    try:
+        member = bot.get_chat_member(chat_id, user_id)
+        return member.status in ["administrator", "creator"]
+    except:
+        return False
 
 
 # 🚀 START COMMAND (DM)
@@ -72,16 +82,24 @@ def savage(m):
     if m.reply_to_message:
         target = m.reply_to_message.from_user
         target_mention = f"[{target.first_name}](tg://user?id={target.id})"
+        target_id = target.id
     else:
         target_mention = mention
+        target_id = user.id
 
-    # 🔥 keyword logic
-    if "hello" in text:
-        r = get_reply("replies/hello.txt")
-    elif any(x in text for x in ["bc", "gali", "madarchod"]):
-        r = get_reply("replies/abuse.txt")
-    elif "admin" in text:
+    # 🔍 admin check first (highest priority 💀)
+    if is_admin(m.chat.id, target_id):
         r = get_reply("replies/admin.txt")
+
+    # 👋 hello trigger
+    elif "hello" in text:
+        r = get_reply("replies/hello.txt")
+
+    # 💀 abuse trigger
+    elif any(x in text for x in ["bc", "mc", "noob", "idiot", "stupid", "gawar"]):
+        r = get_reply("replies/abuse.txt")
+
+    # 🎲 default
     else:
         r = get_reply("replies/random.txt")
 
@@ -89,13 +107,13 @@ def savage(m):
         bot.reply_to(m, f"{target_mention} {r}")
 
 
-# ⚠️ EDIT HANDLER
+# ⚠️ EDIT MESSAGE HANDLER (SAFE)
 @bot.edited_message_handler(func=lambda m: True)
 def handle_edit(m):
     if not m.text:
         return
 
-    # ❌ ignore inline / whisper
+    # ❌ ignore inline / whisper messages
     if m.via_bot:
         return
 
@@ -107,6 +125,7 @@ def handle_edit(m):
         f"{mention}, your message will be deleted in 30 minutes 🙂‍↔️"
     )
 
+    # ⏱ background task
     def delete_flow():
         time.sleep(WARN_DELETE)
         try:
@@ -123,5 +142,5 @@ def handle_edit(m):
     threading.Thread(target=delete_flow).start()
 
 
-print("Bot Running 😈")
+print("Bot Running 😈🔥")
 bot.infinity_polling()
