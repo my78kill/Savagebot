@@ -143,4 +143,4 @@ def handle_edit(m):
 
 
 print("Bot Running 😈🔥")
-bot.infinity_polling()
+
